@@ -1,0 +1,12 @@
+[
+  {
+    "id": "a167a751-b05d-40ff-b7b6-40ebb956d8d4",
+    "status": true,
+    "title": "presurizador plateado",
+    "description": "mantiene la presion de las pelotas",
+    "code": "lol",
+    "price": 24000,
+    "stock": 20,
+    "category": "presurizadores"
+  }
+]
