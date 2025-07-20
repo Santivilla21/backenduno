@@ -1,18 +1,15 @@
-const express = require('express');
-const router = express.Router();
+import { Router } from "express";
+const router = Router();
 
-router.get('/', (req, res) => {
-    res.render('home',  { 
-        layout: 'main',
-        title: 'home | Productos normales'
-    });
+import ProductModel from "../models/Product.js";
+
+router.get("/products", async (req, res) => {
+    const productos = await ProductModel.find().lean();
+    res.render("home", { productos });
 });
 
-router.get('/realtimeproducts', (req, res) => {
-    res.render('realTimeProducts', {
-        layout: 'main',
-        title: 'Productos en Tiempo Real'
-    });
+router.get("/realtimeproducts", async (req, res) => {
+    res.render("realtimeproducts");
 });
 
-module.exports = router;
+export default router;

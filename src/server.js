@@ -1,44 +1,63 @@
-const express = require('express');
-const ProductRouters = require('./routes/products.rutas');
-const cartRouters = require ('./routes/carts.rutas');
-const handlebars = require('express-handlebars')
-const viewsRouter = require('./routes/views.rutas');
-const path = require('path');
+import express from 'express';
+import ProductRouters from './routes/products.rutas.js';
+import cartRouters from './routes/carts.rutas.js';
+import handlebars from 'express-handlebars';
+import viewsRouter from './routes/views.rutas.js';
+import path from 'path';
+import mongoose from 'mongoose';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import ProductModel from './models/Product.js'; 
+
 const app = express();
-
-
-const {createServer}= require("http")
-const {Server}=require("socket.io");
-const { Socket } = require('dgram');
-const { Console } = require('console');
-
-
-const httpServer= createServer(app)//configuracion de web socket
+const httpServer = createServer(app);
 const io = new Server(httpServer);
-io.on("connection", Socket=>{
-    console.log("cliente listo")
-})
 const PORT = 8080;
 
-app.engine('handlebars',handlebars.engine())//configuracion handlebars
-app.set('view engine','handlebars')
-app.set('views','views');
+// __dirname 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+
+
+// Handlebars 
+app.engine('handlebars', handlebars.engine({
+  defaultLayout: 'main',
+  layoutsDir: path.join(__dirname, 'views/layouts'),
+}));
+
+app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.static(path.join(__dirname, 'public')));
+// Middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-/* app.get('/',(req,res)=>{
-    res.render('home',{
-        layout:'main',
-        title:'Home'
-    })
-})
-app.get('/realtimeproducts', (req, res) => {
-    res.render('realTimeProducts', {
-        layout: 'main',
-        title: 'Productos en Tiempo Real'
-    });
-}); */
+// MongoDB
+mongoose.connect('mongodb+srv://patisanti123:coderhouse@cluster0.otmadey.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => console.log('Conectado a MongoDB'))
+  .catch(err => console.error(' Error al conectar ', err));
+
+// WebSocket
+io.on("connection", (socket) => {
+  console.log(" Cliente conectado");
+
+  socket.on("nuevoProducto", async (producto) => {
+    const nuevoProducto = new ProductModel(producto);
+    await nuevoProducto.save();
+
+    const productos = await ProductModel.find().lean();
+    io.emit("actualizarProductos", productos);
+  });
+});
+
+// Rutas
 app.use('/', viewsRouter);
-app.use('/api/products',ProductRouters)
-app.use('/api/carts',cartRouters)
+app.use('/api/products', ProductRouters);
+app.use('/api/carts', cartRouters);
 
-httpServer.listen(PORT,()=>console.log(`servidor activo en el puerto http://localhost:${PORT}`))
+
+httpServer.listen(PORT, () => console.log(` Servidor activo en http://localhost:${PORT}`));
